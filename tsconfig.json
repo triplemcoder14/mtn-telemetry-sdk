@@ -1,17 +1,18 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "target": "ES2019",
+    "module": "CommonJS",
     "rootDir": "src",
     "outDir": "dist",
     "declaration": true,
-    "composite": false,
     "jsx": "react-jsx",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "moduleResolution": "node",
+    "lib": ["esnext"],
     "types": ["react", "react-native"],
-    "lib": ["esnext"]
+    "strict": true
   },
   "include": ["src/**/*", "**/*.tsx"]
 }
