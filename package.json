@@ -1,0 +1,30 @@
+{
+  "name": "mtn-telemetry-sdk",
+  "version": "1.0.0",
+  "description": "MTN Telemetry SDK for React and React Native applications",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prepare": "yarn run clean && yarn run build",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "keywords": [
+    "SDK",
+    "telemetry",
+    "MTN",
+    "react",
+    "react-native",
+    "typescript"
+  ],
+  "author": "Muutassim Mukhtar <muutassim.mukhtar@emtn.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.1.6"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-native": ">=0.72.0"
+  }
+}
