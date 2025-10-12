@@ -1,5 +1,5 @@
 {
-  "name": "mtn-telemetry-sdk",
+  "name": "@muutassim/mtn-telemetry-sdk",
   "version": "1.0.0",
   "description": "MTN Telemetry SDK for React and React Native applications",
   "main": "dist/index.js",
@@ -20,6 +20,13 @@
   ],
   "author": "Muutassim Mukhtar <muutassim.mukhtar@emtn.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/triplemcoder14/mtn-telemetry-sdk.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
   "devDependencies": {
     "typescript": "^5.1.6"
   },
