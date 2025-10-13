@@ -133,7 +133,7 @@ Example Usage in React Native
 ```import { MTNOTel } from 'mtn-telemetry-sdk';
 
 MTNOTel.init({
-  serviceName: 'chequebase',
+  serviceName: 'demo-app',
   environment: 'production'
 });
 
@@ -142,5 +142,6 @@ const span = MTNOTel.startSpan('fetch_users');
 // ...fetch API
 MTNOTel.endSpan(span);
 ```
+
 
 
