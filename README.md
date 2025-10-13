@@ -1,19 +1,5 @@
 ### MTN Telemetry SDK for React Native
 
-### Resource Metadata
-
-##### Each span includes environment and device details automatically:
-
-
-| Attribute                | Example | 
-|--------------------------|---------|
-| `service.name`           | `mtn-mobile-demo` | 
-| `deployment.environment` | `staging` | 
-| `device.model`           | `Pixel 9` |
-| `device.model`           | `Android` |
-| `app.name`               | `1.0.0`   |
-
-
 ##### Version: 0.1.0
 #### Purpose: Unified telemetry instrumentation for MTN mobile apps — powered by OpenTelemetry, integrated with Elastic.
 
@@ -35,7 +21,18 @@ It enables MTN engineering teams to capture end-to-end observability data — in
 
 
 
-### Architecture
+### Resource Metadata
+
+##### Each span includes environment and device details automatically:
+
+
+| Attribute                | Example | 
+|--------------------------|---------|
+| `service.name`           | `mtn-mobile-demo` | 
+| `deployment.environment` | `staging` | 
+| `device.model`           | `Pixel 9` |
+| `device.model`           | `Android` |
+| `app.name`               | `1.0.0`   |
 
 
 
@@ -104,4 +101,5 @@ export default function App() {
 | `FetchInstrumentation` | Automatically traces network requests made using ``fetch()`` | 
 | `AppStateInstrumentation` | Tracks app foreground/background transitions                                    | 
 | (Planned) React Navigation | Captures screen transitions                                    |
+
 
