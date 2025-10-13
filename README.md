@@ -13,7 +13,7 @@
 * Compatible with GitHub Packages for easy installation
 
 
-#### Installation
+### Installation
 
 Install via npm:
 
@@ -142,6 +142,7 @@ const span = MTNOTel.startSpan('fetch_users');
 // ...fetch API
 MTNOTel.endSpan(span);
 ```
+
 
 
 
