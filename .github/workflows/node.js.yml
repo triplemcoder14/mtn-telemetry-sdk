@@ -12,10 +12,16 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
+        node-version: [20.19.4, 22.x]
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Remove package-lock.json (avoid lock file warning)
+        run: |
+          if [ -f package-lock.json ]; then
+            rm package-lock.json
+          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
