@@ -35,6 +35,16 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+
+//Object.defineProperty(exports, "__esModule", { value: true });
+//exports.installFetchInstrumentation = installFetchInstrumentation;
+//var api_1 = require("@opentelemetry/api");
+//function installFetchInstrumentation(_tracerProvider) {
+//    var _this = this;
+//    var tracer = api_1.trace.getTracer('mtn-sdk:fetch');
+//    var originalFetch = globalThis.fetch;
+//    if (!originalFetch)
+
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.installReactNavigationInstrumentation = installReactNavigationInstrumentation;
 var api_1 = require("@opentelemetry/api");

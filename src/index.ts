@@ -2,59 +2,95 @@ import { buildProviders } from './providers';
 import { buildResource } from './resource';
 import { installFetchInstrumentation } from './instrumentations/fetch';
 import { installReactNavigationInstrumentation } from './instrumentations/react-nav';
-// import { installReactNavigationInstrumentation } from './instrumentations/react-navigation';
 import { installAppStateInstrumentation } from './instrumentations/app-state';
+import { trace, metrics } from '@opentelemetry/api';
 import type { OTelRNOptions } from './types';
 
-
 export class MTNOTel {
-private static _instance: MTNOTel | null = null;
-private shutdownFns: Array<() => Promise<void>> = [];
+  private static _instance: MTNOTel | null = null;
+  private shutdownFns: Array<() => Promise<void>> = [];
 
+  static async init(opts: OTelRNOptions) {
+    if (MTNOTel._instance) return MTNOTel._instance;
 
-static init(opts: OTelRNOptions) {
-if (MTNOTel._instance) return MTNOTel._instance;
+    //  Await the async resource builder
+    const resource = await buildResource(opts);
+    const { sdk, shutdown } = buildProviders({ ...opts, resource });
 
+    const instance = new MTNOTel();
+    instance.shutdownFns.push(shutdown);
 
-const resource = buildResource(opts);
-const { tracerProvider, meterProvider, shutdown } = buildProviders({
-resource,
-tracesUrl: opts.otlp.tracesUrl,
-metricsUrl: opts.otlp.metricsUrl,
-headers: opts.otlp.headers,
-samplingRatio: opts.samplingRatio ?? 1.0,
-});
+    //  Use OpenTelemetry API to get global tracer & meter
+    const tracer = trace.getTracer(opts.serviceName);
+    const meter = metrics.getMeter(opts.serviceName);
 
+    //  Conditionally install instrumentations
+    if (opts.enableFetch) {
+      instance.shutdownFns.push(installFetchInstrumentation(tracer));
+    }
+    if (opts.enableNavigation) {
+      instance.shutdownFns.push(installReactNavigationInstrumentation(tracer));
+    }
+    if (opts.enableAppState) {
+      instance.shutdownFns.push(installAppStateInstrumentation(tracer, meter));
+    }
 
-const sdk = new MTNOTel();
-sdk.shutdownFns.push(shutdown);
+    MTNOTel._instance = instance;
+    return instance;
+  }
 
-
-if (opts.enableFetch) {
-sdk.shutdownFns.push(installFetchInstrumentation(tracerProvider));
-}
-if (opts.enableNavigation) {
-sdk.shutdownFns.push(installReactNavigationInstrumentation(tracerProvider));
-}
-if (opts.enableAppState) {
-sdk.shutdownFns.push(installAppStateInstrumentation(tracerProvider, meterProvider));
-}
-
-
-MTNOTel._instance = sdk;
-return sdk;
-}
-
-
-async flushAndShutdown() {
-for (const fn of this.shutdownFns.reverse()) {
-try { await fn(); } catch {}
-}
-MTNOTel._instance = null;
-}
+  async flushAndShutdown() {
+    for (const fn of this.shutdownFns) {
+      await fn();
+    }
+  }
 }
 
 
-export * from './types';
-export * from './context';
-export * from './business';
+// import { buildProviders } from './providers';
+// import { buildResource } from './resource';
+// import { installFetchInstrumentation } from './instrumentations/fetch';
+// import { installReactNavigationInstrumentation } from './instrumentations/react-nav';
+// import { installAppStateInstrumentation } from './instrumentations/app-state';
+// import { trace, metrics } from '@opentelemetry/api';
+// import type { OTelRNOptions } from './types';
+//
+// export class MTNOTel {
+//   private static _instance: MTNOTel | null = null;
+//   private shutdownFns: Array<() => Promise<void>> = [];
+//
+//   static init(opts: OTelRNOptions) {
+//     if (MTNOTel._instance) return MTNOTel._instance;
+//
+//     const resource = buildResource(opts);
+//     const { sdk, shutdown } = buildProviders({ ...opts, resource });
+//
+//     const instance = new MTNOTel();
+//     instance.shutdownFns.push(shutdown);
+//
+//     // Use OpenTelemetry API to get global tracer & meter
+//     const tracer = trace.getTracer(opts.serviceName);
+//     const meter = metrics.getMeter(opts.serviceName);
+//
+//     if (opts.enableFetch) {
+//       instance.shutdownFns.push(installFetchInstrumentation(tracer));
+//     }
+//     if (opts.enableNavigation) {
+//       instance.shutdownFns.push(installReactNavigationInstrumentation(tracer));
+//     }
+//     if (opts.enableAppState) {
+// //         instance.shutdownFns.push(installAppStateInstrumentation(tracer, metrics));
+//
+//       instance.shutdownFns.push(installAppStateInstrumentation(tracer, meter));
+//     }
+//
+//     MTNOTel._instance = instance;
+//     return instance;
+//   }
+//
+//   async flushAndShutdown() {
+//     for (const fn of this.shutdownFns) {
+//       await fn();
+//     }
+//   }
+// }

@@ -1,51 +1,95 @@
-import { ParentBasedSampler, TraceIdRatioBasedSampler, BasicTracerProvider, BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
-import { MeterProvider, PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
-import type { Resource } from '@opentelemetry/resources';
+import { Resource } from '@opentelemetry/resources';
+import type { OTelRNOptions } from './types';
 
+export function buildProviders(opts: OTelRNOptions & { resource: Resource }) {
+  const traceExporter = new OTLPTraceExporter({
+    url: opts.otlp.tracesUrl ?? 'http://localhost:4318/v1/traces',
+    headers: opts.otlp.headers ?? {},
+  });
 
-export function buildProviders(args: {
-resource: Resource;
-tracesUrl: string;
-metricsUrl?: string;
-headers?: Record<string, string>;
-samplingRatio: number;
-}) {
-const tracerProvider = new BasicTracerProvider({
-resource: args.resource,
-sampler: new ParentBasedSampler({ root: new TraceIdRatioBasedSampler(args.samplingRatio) }),
-});
+  const metricExporter = new OTLPMetricExporter({
+    url: opts.otlp.metricsUrl ?? 'http://localhost:4318/v1/metrics',
+    headers: opts.otlp.headers ?? {},
+  });
 
+  const sdk = new NodeSDK({
+    resource: opts.resource,
+    traceExporter,
+    metricReader: new PeriodicExportingMetricReader({
+      exporter: metricExporter,
+      exportIntervalMillis: 60000,
+    }),
+  });
 
-const traceExporter = new OTLPTraceExporter({ url: args.tracesUrl, headers: args.headers });
-tracerProvider.addSpanProcessor(new BatchSpanProcessor(traceExporter, {
-maxQueueSize: 2048,
-scheduledDelayMillis: 5000,
-exportTimeoutMillis: 10000,
-maxExportBatchSize: 256,
-}));
-tracerProvider.register();
+  const shutdown = async () => {
+    await sdk.shutdown();
+  };
 
+  // start immediately
+  sdk.start();
 
-const meterProvider = new MeterProvider({ resource: args.resource });
-if (args.metricsUrl) {
-const metricExporter = new OTLPMetricExporter({ url: args.metricsUrl, headers: args.headers });
-meterProvider.addMetricReader(new PeriodicExportingMetricReader({
-exporter: metricExporter,
-exportIntervalMillis: 60000,
-exportTimeoutMillis: 15000,
-}));
+  return { sdk, shutdown, traceExporter, metricExporter };
 }
 
 
-async function shutdown() {
-await Promise.allSettled([
-tracerProvider.shutdown(),
-meterProvider.shutdown?.(),
-]);
-}
 
 
-return { tracerProvider, meterProvider, shutdown };
-}
+// import { NodeSDK } from '@opentelemetry/sdk-node';
+// import { BatchSpanProcessor, ParentBasedSampler, TraceIdRatioBasedSampler } from '@opentelemetry/sdk-trace-base';
+// import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+// import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
+// import { Resource } from '@opentelemetry/resources';
+// import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
+//
+// export function buildProviders(args: {
+//   resource: Resource;
+//   tracesUrl: string;
+//   metricsUrl?: string;
+//   headers?: Record<string, string>;
+//   samplingRatio: number;
+// }) {
+//   // Configure trace exporter
+//   const traceExporter = new OTLPTraceExporter({
+//     url: args.tracesUrl,
+//     headers: args.headers,
+//   });
+//
+//   // Configure metric exporter (optional)
+//   const metricExporter = args.metricsUrl
+//     ? new OTLPMetricExporter({
+//         url: args.metricsUrl,
+//         headers: args.headers,
+//       })
+//     : undefined;
+//
+//   // Create NodeSDK instance
+//   const sdk = new NodeSDK({
+//     resource: args.resource,
+//     sampler: new ParentBasedSampler({
+//       root: new TraceIdRatioBasedSampler(args.samplingRatio),
+//     }),
+//     spanProcessor: new BatchSpanProcessor(traceExporter, {
+//       maxQueueSize: 2048,
+//       scheduledDelayMillis: 5000,
+//       exportTimeoutMillis: 10000,
+//       maxExportBatchSize: 256,
+//     }),
+//     metricReader: metricExporter
+//       ? new PeriodicExportingMetricReader({
+//           exporter: metricExporter,
+//           exportIntervalMillis: 60000,
+//           exportTimeoutMillis: 15000,
+//         })
+//       : undefined,
+//   });
+//
+//   async function shutdown() {
+//     await sdk.shutdown();
+//   }
+//
+//   return { sdk, shutdown };
+// }
