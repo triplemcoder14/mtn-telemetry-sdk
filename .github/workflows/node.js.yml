@@ -1,10 +1,10 @@
-name: Node.js CI
+name: Build, Test & Publish MTN Telemetry SDK
 
 on:
   push:
     branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+  release:
+    types: [created]
 
 jobs:
   build:
@@ -15,9 +15,10 @@ jobs:
         node-version: [20.19.4, 22.x]
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Remove package-lock.json (avoid lock file warning)
+      - name: Remove package-lock.json (avoid warnings)
         run: |
           if [ -f package-lock.json ]; then
             rm package-lock.json
@@ -35,5 +36,46 @@ jobs:
       - name: Build SDK
         run: yarn run clean && yarn run build
 
-      - name: Test
+      - name: Run tests
         run: yarn run test
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js for GitHub Packages
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://npm.pkg.github.com/
+          scope: '@triplemcoder'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Ensure package is public
+        run: npm pkg set publishConfig.access=public
+
+      - name: Check if version is new
+        id: version-check
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "PACKAGE_VERSION=$VERSION" >> $GITHUB_ENV
+          # Attempt to fetch package info
+          if npm info @triplemcoder14/mtn-telemetry-sdk@$VERSION >/dev/null 2>&1; then
+            echo "Version $VERSION already exists, skipping publish"
+            exit 1
+          fi
+
+      - name: Publish to GitHub Packages
+        if: success()
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
