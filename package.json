@@ -1,5 +1,5 @@
 {
-  "name": "@triplemcoder14/mtn-telemetry-sdk",
+  "name": "@mukhy/mtn-telemetry-sdk",
   "version": "1.0.0",
   "description": "MTN Telemetry SDK for React and React Native applications",
   "main": "dist/index.js",
@@ -22,11 +22,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/triplemcoder14/mtn-telemetry-sdk.git"
+    "url": "git+https://github.com/triplemcoder14/mtn-telemetry-sdk.git"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com/",
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "devDependencies": {
     "@types/react": "^19.2.2",
@@ -38,15 +38,15 @@
     "react-native": ">=0.72.0"
   },
   "dependencies": {
-    "react-native-device-info": "^14.1.1",
     "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.206.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.206.0",
     "@opentelemetry/resources": "^2.1.0",
+    "@opentelemetry/sdk-metrics": "^2.1.0",
+    "@opentelemetry/sdk-node": "^0.206.0",
     "@opentelemetry/sdk-trace-base": "^2.1.0",
     "@opentelemetry/sdk-trace-node": "^2.1.0",
-    "@opentelemetry/sdk-node": "^0.206.0",
-    "@opentelemetry/sdk-metrics": "^2.1.0",
-    "@opentelemetry/exporter-trace-otlp-http": "^0.206.0",
-    "@opentelemetry/exporter-metrics-otlp-http": "^0.206.0",
-    "@opentelemetry/semantic-conventions": "^1.37.0"
+    "@opentelemetry/semantic-conventions": "^1.37.0",
+    "react-native-device-info": "^14.1.1"
   }
 }
