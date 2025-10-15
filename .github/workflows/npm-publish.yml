@@ -3,10 +3,17 @@ name: Build & Publish MTN Telemetry SDK to npm
 on:
   release:
     types: [created]
+  push:
+    branches:
+      - master    
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout repository
@@ -18,8 +25,10 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org/
 
-      - name: Install dependencies
-        run: npm install
+      - name: Install dependencies (clean install)
+        run: |
+          rm -f package-lock.json
+          npm ci
 
       - name: Build SDK
         run: npm run build
@@ -28,6 +37,9 @@ jobs:
         run: npm test
 
       - name: Publish to npm
-        run: npm publish --access public
+        if: github.event_name == 'release'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "Publishing version $(node -p "require('./package.json').version") to npm..."
+          npm publish --access public
