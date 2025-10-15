@@ -1,40 +1,58 @@
-//  import resource from the *build* path
-//  import directly from the implementation file (not just the type index)
-// import the runtime implementation (not just the type)
-import ResourceImpl = require('@opentelemetry/resources/build/src/Resource');
+import { defaultResource, resourceFromAttributes, type Resource } from '@opentelemetry/resources';
 import {
+  SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
   SEMRESATTRS_SERVICE_NAME,
   SEMRESATTRS_SERVICE_VERSION,
-  SEMRESATTRS_DEPLOYMENT_ENVIRONMENT,
 } from '@opentelemetry/semantic-conventions';
-import DeviceInfo from 'react-native-device-info';
 import type { OTelRNOptions } from './types';
 
-// get the runtime Resource class
-const { Resource } = ResourceImpl as unknown as {
-  Resource: {
-    new (init?: { attributes?: Record<string, any> }): any;
-    default(): any;
-  };
+type DeviceInfoModule = {
+  getVersion?: () => string;
+  getManufacturerSync?: () => string;
+  getModel?: () => string;
+  getSystemName?: () => string;
+  getSystemVersion?: () => string;
+  getBundleId?: () => string;
+  getBuildNumber?: () => string;
+  isEmulatorSync?: () => boolean;
 };
 
-export function buildResource(opts: OTelRNOptions) {
-  const attrs: Record<string, any> = {
+async function loadDeviceInfo(): Promise<DeviceInfoModule | null> {
+  return import('react-native-device-info')
+    .then((mod) => (mod?.default ? (mod.default as DeviceInfoModule) : (mod as DeviceInfoModule)))
+    .catch(() => null);
+}
+
+export async function buildResource(opts: OTelRNOptions): Promise<Resource> {
+  const deviceInfo = await loadDeviceInfo();
+
+  const baseAttrs: Record<string, string | number | boolean> = {
     [SEMRESATTRS_SERVICE_NAME]: opts.serviceName,
     [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: opts.environment ?? 'dev',
     [SEMRESATTRS_SERVICE_VERSION]:
-      opts.release ?? DeviceInfo.getVersion?.() ?? 'unknown',
-    'device.manufacturer': DeviceInfo.getManufacturerSync?.() ?? 'unknown',
-    'device.model': DeviceInfo.getModel?.() ?? 'unknown',
-    'device.os': `${DeviceInfo.getSystemName?.() ?? 'unknown'} ${DeviceInfo.getSystemVersion?.() ?? ''}`,
-    'app.bundle': DeviceInfo.getBundleId?.() ?? 'unknown',
-    'app.build': DeviceInfo.getBuildNumber?.() ?? 'unknown',
-    'app.isEmulator': DeviceInfo.isEmulatorSync?.() ?? false,
-    ...(opts as any).attributes,
+      opts.release ?? deviceInfo?.getVersion?.() ?? 'unknown',
+    'device.manufacturer': deviceInfo?.getManufacturerSync?.() ?? 'unknown',
+    'device.model': deviceInfo?.getModel?.() ?? 'unknown',
+    'device.os': `${deviceInfo?.getSystemName?.() ?? 'unknown'} ${
+      deviceInfo?.getSystemVersion?.() ?? ''
+    }`.trim(),
+    'app.bundle': deviceInfo?.getBundleId?.() ?? 'unknown',
+    'app.build': deviceInfo?.getBuildNumber?.() ?? 'unknown',
+    'app.isEmulator': deviceInfo?.isEmulatorSync?.() ?? false,
   };
 
-  const base = Resource.default();
-  const custom = new Resource({ attributes: attrs });
-  return base.merge(custom);
-}
+  const userAttrs: Record<string, string | number | boolean> = {};
+  for (const [key, value] of Object.entries(opts.attributes ?? {})) {
+    if (value == null) continue;
+    const valueType = typeof value;
+    if (valueType === 'string' || valueType === 'number' || valueType === 'boolean') {
+      userAttrs[key] = value as string | number | boolean;
+    } else {
+      userAttrs[key] = String(value);
+    }
+  }
 
+  const attrs = { ...baseAttrs, ...userAttrs };
+
+  return defaultResource().merge(resourceFromAttributes(attrs));
+}

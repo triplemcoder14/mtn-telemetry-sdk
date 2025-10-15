@@ -1,47 +1,85 @@
+import { metrics, trace } from '@opentelemetry/api';
 import { buildProviders } from './providers';
 import { buildResource } from './resource';
-import { installFetchInstrumentation } from './instrumentations/fetch';
-import { installReactNavigationInstrumentation } from './instrumentations/react-nav';
 import { installAppStateInstrumentation } from './instrumentations/app-state';
-import { trace, metrics } from '@opentelemetry/api';
-import type { OTelRNOptions } from './types';
+import { installFetchInstrumentation } from './instrumentations/fetch';
+import {
+  installReactNavigationInstrumentation,
+  type NavigationInstrumentation,
+} from './instrumentations/react-nav';
+import type { NavigationContainerLike, OTelRNOptions } from './types';
 
 export class MTNOTel {
   private static _instance: MTNOTel | null = null;
   private shutdownFns: Array<() => Promise<void>> = [];
+  private navigation?: NavigationInstrumentation;
+  private options!: Required<Pick<OTelRNOptions, 'enableFetch' | 'enableNavigation' | 'enableAppState'>>;
 
   static async init(opts: OTelRNOptions) {
-    if (MTNOTel._instance) return MTNOTel._instance;
+    if (MTNOTel._instance) {
+      if (opts.navigationRef) {
+        MTNOTel._instance.attachNavigation(opts.navigationRef);
+      }
+      return MTNOTel._instance;
+    }
+
+    const normalizedOptions = {
+      enableFetch: opts.enableFetch ?? true,
+      enableNavigation: opts.enableNavigation ?? true,
+      enableAppState: opts.enableAppState ?? true,
+    } as const;
 
     //  await and async resource builder
     const resource = await buildResource(opts);
-    const { sdk, shutdown } = buildProviders({ ...opts, resource });
+    const { shutdown } = buildProviders({ ...opts, resource });
 
     const instance = new MTNOTel();
+    instance.options = normalizedOptions;
     instance.shutdownFns.push(shutdown);
 
     //  using otel api to get global tracer and meter
-    const tracer = trace.getTracer(opts.serviceName);
+    trace.getTracer(opts.serviceName);
     const meter = metrics.getMeter(opts.serviceName);
 
-   // conditionally install instrumentation
-    if (opts.enableFetch) {
-      instance.shutdownFns.push(installFetchInstrumentation(tracer));
+    // conditionally install instrumentation
+    if (normalizedOptions.enableFetch) {
+      instance.shutdownFns.push(installFetchInstrumentation());
     }
-    if (opts.enableNavigation) {
-      instance.shutdownFns.push(installReactNavigationInstrumentation(tracer));
+    if (normalizedOptions.enableNavigation) {
+      instance.navigation = installReactNavigationInstrumentation(opts.navigationRef);
+      instance.shutdownFns.push(instance.navigation.shutdown);
     }
-    if (opts.enableAppState) {
-      instance.shutdownFns.push(installAppStateInstrumentation(tracer, meter));
+    if (normalizedOptions.enableAppState) {
+      instance.shutdownFns.push(installAppStateInstrumentation(meter));
     }
 
     MTNOTel._instance = instance;
     return instance;
   }
 
+  attachNavigation(ref: NavigationContainerLike | null) {
+    if (!this.options.enableNavigation) return;
+    this.navigation?.attach(ref);
+  }
+
+  detachNavigation() {
+    this.navigation?.detach();
+  }
+
+  static attachNavigation(ref: NavigationContainerLike | null) {
+    MTNOTel._instance?.attachNavigation(ref);
+  }
+
+  static detachNavigation() {
+    MTNOTel._instance?.detachNavigation();
+  }
+
   async flushAndShutdown() {
     for (const fn of this.shutdownFns) {
       await fn();
     }
+    MTNOTel._instance = null;
   }
 }
+
+export type { OTelRNOptions, NavigationContainerLike } from './types';

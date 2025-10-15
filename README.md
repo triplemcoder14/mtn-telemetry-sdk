@@ -33,16 +33,24 @@ or via yarn:
 
 Create a file like src/telemetry/initTelemetry.ts:
 
-```import { MTNOTel } from 'mtn-telemetry-sdk';
-import { OTELRNOptions } from 'mtn-telemetry-sdk/dist/types';
+```
+import { MTNOTel } from 'mtn-telemetry-sdk';
+import type { OTelRNOptions } from 'mtn-telemetry-sdk/dist/types';
 
-export function initTelemetry() {
-  const options: OTELRNOptions = {
+export async function initTelemetry(navigationRef?: any) {
+  const options: OTelRNOptions = {
     serviceName: 'demo-app',
-    // Optional: exporter endpoint, environment, etc.
+    environment: 'production',
+    navigationRef,
+    otlp: {
+      tracesUrl: 'https://collector.example.com/v1/traces',
+      headers: {
+        Authorization: 'Bearer example-token',
+      },
+    },
   };
 
-  MTNOTel.init(options);
+  await MTNOTel.init(options);
   console.log('Telemetry initialized');
 }
 ```
@@ -50,18 +58,21 @@ export function initTelemetry() {
 2. Integrate in React / React Native App
 In your root component (e.g., App.tsx):
 
-```import React, { useEffect } from 'react';
+```
+import React, { useEffect, useRef } from 'react';
 import { initTelemetry } from './telemetry/initTelemetry';
 import { NavigationContainer } from '@react-navigation/native';
 import MainStack from './screens/MainStack';
 
 export default function App() {
+  const navigationRef = useRef(null);
+
   useEffect(() => {
-    initTelemetry();
+    initTelemetry(navigationRef.current);
   }, []);
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <MainStack />
     </NavigationContainer>
   );
@@ -72,7 +83,8 @@ export default function App() {
 
 You can measure the performance of any async operation:
 
-```import { startSpan, endSpan } from 'mtn-telemetry-sdk';
+```
+import { startSpan, endSpan } from 'mtn-telemetry-sdk';
 
 async function fetchUserData() {
   const span = startSpan('fetch_user_data', { url: '/users' });
@@ -89,17 +101,22 @@ async function fetchUserData() {
 4. Automatic Navigation Instrumentation (Optional)
 If using React Navigation:
 
-```const navigationRef = useNavigationContainerRef();
+```
+import { useNavigationContainerRef } from '@react-navigation/native';
+import { MTNOTel } from 'mtn-telemetry-sdk';
 
-<NavigationContainer
-  ref={navigationRef}
-  onStateChange={() => {
-    const span = startSpan('navigation_change');
-    endSpan(span);
-  }}
->
-  <MainStack />
-</NavigationContainer>
+const navigationRef = useNavigationContainerRef();
+
+useEffect(() => {
+  MTNOTel.attachNavigation(navigationRef);
+  return () => MTNOTel.detachNavigation();
+}, [navigationRef]);
+
+return (
+  <NavigationContainer ref={navigationRef}>
+    <MainStack />
+  </NavigationContainer>
+);
 ```
 
 
@@ -107,13 +124,21 @@ Configuration Options
 
 The ``OTELRNOptions`` object can include:
 
-| Option        | Type   | Description                                   |
-| ------------- | ------ | --------------------------------------------- |
-| `serviceName` | string | Name of the service/app                       |
-| `environment` | string | Optional environment (prod/dev)               |
-| `endpoint`    | string | Optional OTLP/collector endpoint              |
-| `exporter`    | string | Optional exporter type (OTLP HTTP/gRPC, etc.) |
-
+| Option             | Type                    | Description                                                                  |
+| ------------------ | ----------------------- | ---------------------------------------------------------------------------- |
+| `serviceName`      | string                  | Required service name passed to the OpenTelemetry resource.                  |
+| `environment`      | string                  | Optional deployment environment tag (`dev`, `staging`, `prod`, …).           |
+| `release`          | string                  | Optional release/build identifier; falls back to `react-native-device-info`. |
+| `otlp`             | object                  | Optional OTLP exporter configuration.                                        |
+| `otlp.tracesUrl`   | string                  | Custom OTLP HTTP traces endpoint (defaults to `http://localhost:4318`).      |
+| `otlp.metricsUrl`  | string                  | Custom OTLP HTTP metrics endpoint.                                           |
+| `otlp.headers`     | Record<string, string>  | Headers injected into every OTLP export request.                             |
+| `enableFetch`      | boolean                 | Toggle automatic fetch instrumentation (defaults to `true`).                 |
+| `enableNavigation` | boolean                 | Toggle React Navigation instrumentation (defaults to `true`).                |
+| `enableAppState`   | boolean                 | Toggle React Native AppState spans and metrics (defaults to `true`).         |
+| `navigationRef`    | NavigationContainerLike | Optional navigation container to attach automatically during init.          |
+| `attributes`       | Record<string, unknown> | Extra resource attributes merged into the default OpenTelemetry resource.    |
+| `samplingRatio`    | number                  | Root sampler trace-id ratio (defaults to `1.0`).                             |
 
 Publishing & Versioning
 * The SDK is hosted on GitHub Packages:
@@ -130,7 +155,8 @@ Contributing
 
 Example Usage in React Native
 
-```import { MTNOTel } from 'mtn-telemetry-sdk';
+```
+import { MTNOTel } from 'mtn-telemetry-sdk';
 
 MTNOTel.init({
   serviceName: 'demo-app',

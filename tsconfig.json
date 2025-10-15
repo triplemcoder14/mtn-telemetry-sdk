@@ -11,7 +11,7 @@
     "skipLibCheck": true,
     "moduleResolution": "node",
     "lib": ["esnext"],
-    "types": ["react", "react-native"],
+    "types": ["react"],
     "strict": true
   },
   "include": ["src/**/*", "**/*.tsx"]
