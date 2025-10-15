@@ -5,7 +5,7 @@ on:
     types: [created]
   push:
     branches:
-      - master    
+      - master  
 
 jobs:
   build-and-publish:
@@ -25,10 +25,10 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org/
 
-      - name: Install dependencies (clean install)
+      - name: Install dependencies
         run: |
-          rm -f package-lock.json
-          npm ci
+          echo "Installing dependencies..."
+          npm install
 
       - name: Build SDK
         run: npm run build
