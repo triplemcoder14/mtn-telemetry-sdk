@@ -1,43 +1,29 @@
-name: Build, Test & Publish MTN Telemetry SDK
+name: Publish MTN Telemetry SDK to NPM
 
 on:
-  push:
-    branches: [ "master" ]
   release:
     types: [created]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [20.19.4, 22.x]
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Remove package-lock.json (avoid warnings)
-        run: |
-          if [ -f package-lock.json ]; then
-            rm package-lock.json
-          fi
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'yarn'
+          node-version: 20
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: npm ci
 
       - name: Build SDK
-        run: yarn run clean && yarn run build
+        run: npm run build
 
       - name: Run tests
-        run: yarn run test
+        run: npm test
 
   publish:
     needs: build
@@ -50,32 +36,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js for GitHub Packages
+      - name: Setup Node.js for NPM
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          registry-url: https://npm.pkg.github.com/
-          scope: '@triplemcoder'
+          registry-url: https://registry.npmjs.org/
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: npm ci
 
       - name: Ensure package is public
         run: npm pkg set publishConfig.access=public
 
-      - name: Check if version is new
-        id: version-check
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "PACKAGE_VERSION=$VERSION" >> $GITHUB_ENV
-          # Attempt to fetch package info
-          if npm info @triplemcoder14/mtn-telemetry-sdk@$VERSION >/dev/null 2>&1; then
-            echo "Version $VERSION already exists, skipping publish"
-            exit 1
-          fi
-
-      - name: Publish to GitHub Packages
-        if: success()
+      - name: Publish to NPM
         run: npm publish
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
