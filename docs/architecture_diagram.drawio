@@ -1,0 +1,92 @@
+<mxfile host="app.diagrams.net" modified="2024-05-28T00:00:00.000Z" agent="Mozilla/5.0" version="20.5.3" type="device">
+  <diagram id="u8U4PZqv1P6SxJYHn9xP" name="MTN Telemetry SDK Architecture">
+    <mxGraphModel dx="1600" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="App" value="Host App (React / React Native)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="80" y="120" width="180" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="Options" value="Configuration\n(OTelRNOptions)" style="shape=document;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656" vertex="1" parent="1">
+          <mxGeometry x="80" y="230" width="180" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="Init" value="MTNOTel.init" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="320" y="170" width="180" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="Resource" value="Resource Builder\n• Device + App metadata\n• User attributes" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6" vertex="1" parent="1">
+          <mxGeometry x="560" y="90" width="220" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="Providers" value="Provider Bundle" style="swimlane;childLayout=stackLayout;horizontal=1;startSize=30;rounded=1;html=1;whiteSpace=wrap;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="560" y="230" width="240" height="220" as="geometry"/>
+        </mxCell>
+        <mxCell id="Tracer" value="Tracer Provider\n• ParentBased + Ratio sampler\n• BatchSpanProcessor\n• OTLP HTTP Exporter" style="whiteSpace=wrap;html=1;rounded=0" vertex="1" parent="Providers">
+          <mxGeometry x="0" y="0" width="240" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="Meter" value="Meter Provider\n• Periodic Metric Reader\n• OTLP Metrics Exporter" style="whiteSpace=wrap;html=1;rounded=0" vertex="1" parent="Providers">
+          <mxGeometry x="0" y="110" width="240" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="Shutdown" value="Unified Shutdown\n• Flush + stop providers" style="whiteSpace=wrap;html=1;rounded=0" vertex="1" parent="Providers">
+          <mxGeometry x="0" y="180" width="240" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="Instrumentations" value="Built-in Instrumentations" style="swimlane;startSize=30;rounded=1;horizontal=1;childLayout=stackLayout;html=1;whiteSpace=wrap;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="840" y="80" width="240" height="240" as="geometry"/>
+        </mxCell>
+        <mxCell id="Fetch" value="Fetch Instrumentation\n• Wrap global fetch\n• Client spans + traceparent" style="whiteSpace=wrap;html=1" vertex="1" parent="Instrumentations">
+          <mxGeometry x="0" y="0" width="240" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="Navigation" value="React Navigation\n• Screen transition spans\n• Auto attach/detach" style="whiteSpace=wrap;html=1" vertex="1" parent="Instrumentations">
+          <mxGeometry x="0" y="80" width="240" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="AppState" value="AppState\n• Foreground/background spans\n• Engagement counters" style="whiteSpace=wrap;html=1" vertex="1" parent="Instrumentations">
+          <mxGeometry x="0" y="160" width="240" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="Business" value="Business Journey Utilities" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6d0de;strokeColor=#996185;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="840" y="350" width="240" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="BusinessContent" value="BusinessTracer\n• Start / Step / Complete\nTrackedPressable\n• Auto journey step on tap" style="whiteSpace=wrap;html=1" vertex="1" parent="Business">
+          <mxGeometry x="10" y="30" width="220" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="Helpers" value="Runtime Helpers\n• attachNavigation\n• detachNavigation\n• flushAndShutdown" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d0ece7;strokeColor=#3ba372" vertex="1" parent="1">
+          <mxGeometry x="560" y="470" width="240" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="Backend" value="OTLP Collector / APM Backend" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1120" y="220" width="220" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="Arrow1" style="endArrow=block;html=1;rounded=0;strokeColor=#6c8ebf" edge="1" parent="1" source="App" target="Init">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="260" y="200" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Arrow2" style="endArrow=block;html=1;rounded=0;strokeColor=#d6b656" edge="1" parent="1" source="Options" target="Init">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="Arrow3" style="endArrow=block;html=1;rounded=0;strokeColor=#9673a6" edge="1" parent="1" source="Init" target="Resource">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="Arrow4" style="endArrow=block;html=1;rounded=0;strokeColor=#b85450" edge="1" parent="1" source="Init" target="Providers">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="Arrow5" value="Feature Flags" style="endArrow=block;html=1;rounded=0;strokeColor=#d79b00;fontColor=#d79b00" edge="1" parent="1" source="Init" target="Instrumentations">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="820" y="200" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Arrow6" style="endArrow=block;html=1;rounded=0;strokeColor=#996185" edge="1" parent="1" source="Providers" target="Business">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="Arrow7" style="endArrow=block;html=1;rounded=0;strokeColor=#3ba372" edge="1" parent="1" source="Init" target="Helpers">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="Arrow8" style="endArrow=block;html=1;rounded=0;strokeColor=#666666" edge="1" parent="1" source="Providers" target="Backend">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="Arrow9" value="Traces &amp; Metrics" style="endArrow=block;html=1;rounded=0;strokeColor=#666666;fontColor=#666666" edge="1" parent="1" source="Instrumentations" target="Providers">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="Arrow10" style="endArrow=block;html=1;rounded=0;strokeColor=#666666" edge="1" parent="1" source="Business" target="Providers">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

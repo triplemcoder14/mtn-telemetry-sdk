@@ -1,4 +1,4 @@
-import { metrics, trace } from '@opentelemetry/api';
+import { metrics } from '@opentelemetry/api';
 import { Resource } from '@opentelemetry/resources';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
@@ -14,6 +14,7 @@ import {
   type MetricReader,
 } from '@opentelemetry/sdk-metrics';
 import type { OTelRNOptions } from './types';
+import { StackContextManager } from './context-manager/stack';
 
 export interface ProviderBundle {
   tracerProvider: BasicTracerProvider;
@@ -38,7 +39,19 @@ export function buildProviders(opts: OTelRNOptions & { resource: Resource }): Pr
     }),
     spanProcessors: [new BatchSpanProcessor(traceExporter)],
   });
-  trace.setGlobalTracerProvider(tracerProvider);
+
+  const isReactNative =
+    typeof navigator !== 'undefined' && navigator?.product === 'ReactNative';
+
+  const contextManager = isReactNative ? new StackContextManager().enable() : null;
+
+  if (contextManager) {
+    tracerProvider.register({
+      contextManager,
+    });
+  } else {
+    tracerProvider.register();
+  }
 
   const metricReaders: MetricReader[] = [];
 
@@ -68,6 +81,8 @@ export function buildProviders(opts: OTelRNOptions & { resource: Resource }): Pr
       tracerProvider.shutdown(),
       meterProvider.shutdown(),
     ]);
+
+    contextManager?.disable();
 
     for (const result of results) {
       if (result.status === 'rejected') {
