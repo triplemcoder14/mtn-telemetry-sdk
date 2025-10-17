@@ -1,4 +1,3 @@
-import { metrics } from '@opentelemetry/api';
 import { Resource } from '@opentelemetry/resources';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
@@ -39,20 +38,6 @@ export function buildProviders(opts: OTelRNOptions & { resource: Resource }): Pr
     }),
     spanProcessors: [new BatchSpanProcessor(traceExporter)],
   });
-
-  const isReactNative =
-    typeof navigator !== 'undefined' && navigator?.product === 'ReactNative';
-
-  const contextManager = isReactNative ? new StackContextManager().enable() : null;
-
-  if (contextManager) {
-    tracerProvider.register({
-      contextManager,
-    });
-  } else {
-    tracerProvider.register();
-  }
-
   const metricReaders: MetricReader[] = [];
 
   if (otlp.metricsUrl) {
@@ -81,8 +66,6 @@ export function buildProviders(opts: OTelRNOptions & { resource: Resource }): Pr
       tracerProvider.shutdown(),
       meterProvider.shutdown(),
     ]);
-
-    contextManager?.disable();
 
     for (const result of results) {
       if (result.status === 'rejected') {

@@ -11,7 +11,7 @@ export class StackContextManager implements ContextManager {
     return this._stack.length > 0 ? this._stack[this._stack.length - 1] : ROOT_CONTEXT;
   }
 
-  with<T extends WithTarget<any>>(context: Context, fn: T, thisArg?: ThisParameterType<T>, ...args: Parameters<T>): ReturnType<T> {
+
     if (!this._enabled) {
       return fn.apply(thisArg as any, args);
     }
@@ -24,7 +24,7 @@ export class StackContextManager implements ContextManager {
     }
   }
 
-  bind<T>(target: T, context: Context = this.active()): T {
+
     if (!this._enabled) {
       return target;
     }
@@ -32,7 +32,6 @@ export class StackContextManager implements ContextManager {
     if (typeof target === 'function') {
       const boundContextManager = this;
       const boundFn = function bound(this: unknown, ...args: unknown[]) {
-        return boundContextManager.with(context, target as (...args: unknown[]) => unknown, this, ...args);
       };
       return boundFn as unknown as T;
     }
