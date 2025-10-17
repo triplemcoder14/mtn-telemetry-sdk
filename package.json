@@ -38,14 +38,15 @@
     "react-native": ">=0.72.0"
   },
   "dependencies": {
-    "async_hooks": "file:shims/async_hooks",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/exporter-metrics-otlp-http": "^0.206.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.206.0",
     "@opentelemetry/resources": "^2.1.0",
     "@opentelemetry/sdk-metrics": "^2.1.0",
     "@opentelemetry/sdk-trace-base": "^2.1.0",
+    "@opentelemetry/sdk-trace-node": "^2.1.0",
     "@opentelemetry/semantic-conventions": "^1.37.0",
+    "async_hooks": "file:shims/async_hooks",
     "react-native-device-info": "^14.1.1"
   }
 }
