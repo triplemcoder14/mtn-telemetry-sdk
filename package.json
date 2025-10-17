@@ -1,5 +1,5 @@
 {
-  "name": "@triplemcoder14/mtn-telemetry-sdk",
+  "name": "@mukhy/mtn-telemetry-sdk",
   "version": "1.0.0",
   "description": "MTN Telemetry SDK for React and React Native applications",
   "main": "dist/index.js",
@@ -7,7 +7,7 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "tsc",
-    "prepare": "yarn run clean && yarn run build",
+    "prepare": "npm run clean && npm run build",
     "test": "echo \"No tests yet\" && exit 0"
   },
   "keywords": [
@@ -25,8 +25,8 @@
     "url": "https://github.com/triplemcoder14/mtn-telemetry-sdk.git"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com/",
-    "access": "public"
+    "registry": "https://registry.npmjs.org/",
+    "access": "restricted"
   },
   "devDependencies": {
     "@types/react": "^19.2.2",
@@ -38,6 +38,7 @@
     "react-native": ">=0.72.0"
   },
   "dependencies": {
+    "async_hooks": "file:shims/async_hooks",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/exporter-metrics-otlp-http": "^0.206.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.206.0",
