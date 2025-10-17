@@ -46,9 +46,17 @@ export function buildProviders(opts: OTelRNOptions & { resource: Resource }): Pr
   const isReactNative = globalNavigator.navigator?.product === 'ReactNative';
 
   const contextManager = isReactNative ? new StackContextManager().enable() : null;
-  const previousContextManager: ContextManager | undefined = contextManager
-    ? otelContext.setGlobalContextManager(contextManager)
-    : undefined;
+  const previousContextManager: ContextManager | undefined =
+      (otelContext as any)?._getContextManager?.();
+
+  if (contextManager) {
+    otelContext.setGlobalContextManager(contextManager);
+  }
+
+  // const contextManager = isReactNative ? new StackContextManager().enable() : null;
+  // const previousContextManager: ContextManager | undefined = contextManager
+  //   ? otelContext.setGlobalContextManager(contextManager)
+  //   : undefined;
 
   trace.setGlobalTracerProvider(tracerProvider);
 
