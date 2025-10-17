@@ -1,5 +1,5 @@
 {
-  "name": "@triplemcoder14/mtn-telemetry-sdk",
+  "name": "@mukhy/mtn-telemetry-sdk",
   "version": "1.0.0",
   "description": "MTN Telemetry SDK for React and React Native applications",
   "main": "dist/index.js",
