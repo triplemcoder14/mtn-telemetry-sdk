@@ -1,4 +1,3 @@
-import { context as otelContext, metrics, trace, type ContextManager } from '@opentelemetry/api';
 import { Resource } from '@opentelemetry/resources';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
@@ -39,27 +38,6 @@ export function buildProviders(opts: OTelRNOptions & { resource: Resource }): Pr
     }),
     spanProcessors: [new BatchSpanProcessor(traceExporter)],
   });
-
-  const globalNavigator = globalThis as typeof globalThis & {
-    navigator?: { product?: string };
-  };
-  const isReactNative = globalNavigator.navigator?.product === 'ReactNative';
-
-  const contextManager = isReactNative ? new StackContextManager().enable() : null;
-  const previousContextManager: ContextManager | undefined =
-      (otelContext as any)?._getContextManager?.();
-
-  if (contextManager) {
-    otelContext.setGlobalContextManager(contextManager);
-  }
-
-  // const contextManager = isReactNative ? new StackContextManager().enable() : null;
-  // const previousContextManager: ContextManager | undefined = contextManager
-  //   ? otelContext.setGlobalContextManager(contextManager)
-  //   : undefined;
-
-  trace.setGlobalTracerProvider(tracerProvider);
-
   const metricReaders: MetricReader[] = [];
 
   if (otlp.metricsUrl) {
@@ -88,20 +66,6 @@ export function buildProviders(opts: OTelRNOptions & { resource: Resource }): Pr
       tracerProvider.shutdown(),
       meterProvider.shutdown(),
     ]);
-
-    trace.disable();
-
-    if (contextManager) {
-      otelContext.disable();
-      contextManager.disable();
-
-      if (previousContextManager && previousContextManager !== contextManager) {
-        otelContext.setGlobalContextManager(previousContextManager);
-        if (typeof (previousContextManager as { enable?: () => void }).enable === 'function') {
-          (previousContextManager as { enable?: () => void }).enable?.();
-        }
-      }
-    }
 
     for (const result of results) {
       if (result.status === 'rejected') {
