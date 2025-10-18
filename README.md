@@ -17,12 +17,12 @@
 
 Install via npm:
 
-``npm i @mukhy/mtn-telemetry-sdk@1.0.1
+``npm i @mukhy/mtn-telemetry-sdk
 ``
 
 or via yarn:
 
-``yarn add @mukhy/mtn-telemetry-sdk@1.0.1
+``yarn add @mukhy/mtn-telemetry-sdk
 ``
 
 **Make sure your project uses React >=18.0.0 and React Native >=0.72.0.**
