@@ -1,5 +1,5 @@
 import { MTNOTel, setProviderBuilder } from './mtno-tel';
-import { buildProviders } from './providers';
+import { buildProviders } from './providers.native';
 
 setProviderBuilder(buildProviders);
 

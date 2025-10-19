@@ -1,10 +1,8 @@
 import { context as otelContext, metrics, trace, type ContextManager } from '@opentelemetry/api';
 import { Resource } from '@opentelemetry/resources';
-import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
-import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import {
-  BasicTracerProvider,
   BatchSpanProcessor,
+  BasicTracerProvider,
   ParentBasedSampler,
   TraceIdRatioBasedSampler,
 } from '@opentelemetry/sdk-trace-base';
@@ -15,6 +13,10 @@ import {
 } from '@opentelemetry/sdk-metrics';
 import type { OTelRNOptions } from './types';
 import { StackContextManager } from './context-manager/stack';
+import {
+  ReactNativeOTLPMetricsExporter,
+  ReactNativeOTLPTraceExporter,
+} from './exporters/otlp-http';
 import type { ProviderBundle } from './providers/types';
 
 const DEFAULT_TRACE_URL = 'http://localhost:4318/v1/traces';
@@ -22,7 +24,8 @@ const DEFAULT_METRIC_URL = 'http://localhost:4318/v1/metrics';
 
 export function buildProviders(opts: OTelRNOptions & { resource: Resource }): ProviderBundle {
   const otlp = opts.otlp ?? {};
-  const traceExporter = new OTLPTraceExporter({
+
+  const traceExporter = new ReactNativeOTLPTraceExporter({
     url: otlp.tracesUrl ?? DEFAULT_TRACE_URL,
     headers: otlp.headers,
   });
@@ -35,26 +38,18 @@ export function buildProviders(opts: OTelRNOptions & { resource: Resource }): Pr
     spanProcessors: [new BatchSpanProcessor(traceExporter)],
   });
 
-  const globalNavigator = globalThis as typeof globalThis & {
-    navigator?: { product?: string };
-  };
-  const isReactNative = globalNavigator.navigator?.product === 'ReactNative';
-
-  const contextManager = isReactNative ? new StackContextManager().enable() : null;
+  const contextManager = new StackContextManager().enable();
   const previousContextManager = (otelContext as unknown as {
     _getContextManager?: () => ContextManager | undefined;
   })._getContextManager?.();
 
-  if (contextManager) {
-    otelContext.setGlobalContextManager(contextManager);
-  }
-
+  otelContext.setGlobalContextManager(contextManager);
   trace.setGlobalTracerProvider(tracerProvider);
 
   const metricReaders: MetricReader[] = [];
 
   if (otlp.metricsUrl) {
-    const metricExporter = new OTLPMetricExporter({
+    const metricExporter = new ReactNativeOTLPMetricsExporter({
       url: otlp.metricsUrl ?? DEFAULT_METRIC_URL,
       headers: otlp.headers,
     });
@@ -81,22 +76,18 @@ export function buildProviders(opts: OTelRNOptions & { resource: Resource }): Pr
     ]);
 
     trace.disable();
+    otelContext.disable();
+    contextManager.disable();
 
-    if (contextManager) {
-      otelContext.disable();
-      contextManager.disable();
-
-      if (previousContextManager && previousContextManager !== contextManager) {
-        otelContext.setGlobalContextManager(previousContextManager);
-        if (typeof (previousContextManager as { enable?: () => void }).enable === 'function') {
-          (previousContextManager as { enable?: () => void }).enable?.();
-        }
+    if (previousContextManager && previousContextManager !== contextManager) {
+      otelContext.setGlobalContextManager(previousContextManager);
+      if (typeof (previousContextManager as { enable?: () => void }).enable === 'function') {
+        (previousContextManager as { enable?: () => void }).enable?.();
       }
     }
 
     for (const result of results) {
       if (result.status === 'rejected') {
-        // rethrow the first rejection to surface shutdown errors
         throw result.reason;
       }
     }
@@ -106,3 +97,4 @@ export function buildProviders(opts: OTelRNOptions & { resource: Resource }): Pr
 }
 
 export type { ProviderBundle } from './providers/types';
+
