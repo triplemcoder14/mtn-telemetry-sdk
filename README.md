@@ -17,12 +17,12 @@
 
 Install via npm:
 
-``npm install @triplemcoder14/mtn-telemetry-sdk
+``npm i @mukhy/mtn-telemetry-sdk
 ``
 
 or via yarn:
 
-``yarn add @triplemcoder14/mtn-telemetry-sdk
+``yarn add @mukhy/mtn-telemetry-sdk
 ``
 
 **Make sure your project uses React >=18.0.0 and React Native >=0.72.0.**
