@@ -1,3 +1,4 @@
+import { metrics, trace, context as otelContext } from '@opentelemetry/api';
 import { Resource } from '@opentelemetry/resources';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
@@ -14,11 +15,23 @@ import {
 } from '@opentelemetry/sdk-metrics';
 import type { OTelRNOptions } from './types';
 import { StackContextManager } from './context-manager/stack';
+
+export interface ProviderBundle {
+  tracerProvider: BasicTracerProvider;
+  meterProvider: MeterProvider;
+  shutdown: () => Promise<void>;
+}
+
 const DEFAULT_TRACE_URL = 'http://localhost:4318/v1/traces';
 const DEFAULT_METRIC_URL = 'http://localhost:4318/v1/metrics';
 
-export function buildProviders(opts: OTelRNOptions & { resource: Resource }): ProviderBundle {
+
+export function buildProviders(
+  opts: OTelRNOptions & { resource: Resource }
+): ProviderBundle {
   const otlp = opts.otlp ?? {};
+
+  
   const traceExporter = new OTLPTraceExporter({
     url: otlp.tracesUrl ?? DEFAULT_TRACE_URL,
     headers: otlp.headers,
@@ -31,6 +44,7 @@ export function buildProviders(opts: OTelRNOptions & { resource: Resource }): Pr
     }),
     spanProcessors: [new BatchSpanProcessor(traceExporter)],
   });
+
   const metricReaders: MetricReader[] = [];
 
   if (otlp.metricsUrl) {
@@ -40,11 +54,11 @@ export function buildProviders(opts: OTelRNOptions & { resource: Resource }): Pr
     });
 
     metricReaders.push(
-        new PeriodicExportingMetricReader({
-          exporter: metricExporter,
-          exportIntervalMillis: 60_000,
-          exportTimeoutMillis: 15_000,
-        })
+      new PeriodicExportingMetricReader({
+        exporter: metricExporter,
+        exportIntervalMillis: 60_000,
+        exportTimeoutMillis: 15_000,
+      })
     );
   }
 
@@ -53,8 +67,12 @@ export function buildProviders(opts: OTelRNOptions & { resource: Resource }): Pr
     readers: metricReaders,
   });
 
-  // FIX: import and register global meter provider
+ 
   metrics.setGlobalMeterProvider(meterProvider);
+
+ 
+  let contextManager: StackContextManager | undefined;
+  let previousContextManager: StackContextManager | undefined;
 
   const shutdown = async () => {
     const results = await Promise.allSettled([
@@ -62,15 +80,22 @@ export function buildProviders(opts: OTelRNOptions & { resource: Resource }): Pr
       meterProvider.shutdown(),
     ]);
 
-    trace.disable();
+   
+    trace.disable?.();
 
     if (contextManager) {
-      otelContext.disable();
-      contextManager.disable();
+      otelContext.disable?.();
+      contextManager.disable?.();
 
-      if (previousContextManager && previousContextManager !== contextManager) {
+      if (
+        previousContextManager &&
+        previousContextManager !== contextManager
+      ) {
         otelContext.setGlobalContextManager(previousContextManager);
-        if (typeof (previousContextManager as { enable?: () => void }).enable === 'function') {
+        if (
+          typeof (previousContextManager as { enable?: () => void }).enable ===
+          'function'
+        ) {
           (previousContextManager as { enable?: () => void }).enable?.();
         }
       }
