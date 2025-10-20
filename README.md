@@ -34,49 +34,79 @@ or via yarn:
 Create a file like src/telemetry/initTelemetry.ts:
 
 ```
-import { MTNOTel } from 'mtn-telemetry-sdk';
-import type { OTelRNOptions } from 'mtn-telemetry-sdk/dist/types';
+import { MTNOTel, type OTelRNOptions } from '@triplemcoder14/mtn-telemetry-sdk';
 
-export async function initTelemetry(navigationRef?: any) {
+export async function initTelemetry(navigationRef?: OTelRNOptions['navigationRef']) {
   const options: OTelRNOptions = {
     serviceName: 'demo-app',
     environment: 'production',
     navigationRef,
+    samplingRatio: 1,
     otlp: {
       tracesUrl: 'https://collector.example.com/v1/traces',
+      metricsUrl: 'https://collector.example.com/v1/metrics',
       headers: {
         Authorization: 'Bearer example-token',
       },
     },
   };
 
-  await MTNOTel.init(options);
-  console.log('Telemetry initialized');
+  return MTNOTel.init(options);
 }
+
 ```
 
 2. Integrate in React / React Native App
 In your root component (e.g., App.tsx):
 
 ```
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
+import { NavigationContainer, type NavigationContainerRef } from '@react-navigation/native';
+import { MTNOTel } from '@triplemcoder14/mtn-telemetry-sdk';
 import { initTelemetry } from './telemetry/initTelemetry';
-import { NavigationContainer } from '@react-navigation/native';
 import MainStack from './screens/MainStack';
 
 export default function App() {
-  const navigationRef = useRef(null);
+  const navigationRef = useRef<NavigationContainerRef<any> | null>(null);
 
   useEffect(() => {
-    initTelemetry(navigationRef.current);
+    let telemetry: Awaited<ReturnType<typeof initTelemetry>> | undefined;
+
+    initTelemetry(navigationRef.current)
+      .then((instance) => (telemetry = instance))
+      .catch((err) => console.warn('Failed to initialize telemetry', err));
+
+    return () => {
+      MTNOTel.detachNavigation();
+      telemetry?.flushAndShutdown().catch((err) => {
+        console.warn('Failed to flush telemetry', err);
+      });
+    };
   }, []);
 
   return (
-    <NavigationContainer ref={navigationRef}>
+    <NavigationContainer
+      ref={navigationRef}
+      onReady={() => MTNOTel.attachNavigation(navigationRef.current)}
+    >
       <MainStack />
     </NavigationContainer>
   );
 }
+```
+
+Using in React (Web)
+
+```
+import { MTNOTel } from '@triplemcoder14/mtn-telemetry-sdk';
+
+MTNOTel.init({
+  serviceName: 'web-app',
+  environment: 'staging',
+  otlp: {
+    tracesUrl: 'https://collector.example.com/v1/traces',
+  },
+});
 ```
 
 3. Creating Custom Spans
@@ -139,6 +169,20 @@ The ``OTELRNOptions`` object can include:
 | `navigationRef`    | NavigationContainerLike | Optional navigation container to attach automatically during init.          |
 | `attributes`       | Record<string, unknown> | Extra resource attributes merged into the default OpenTelemetry resource.    |
 | `samplingRatio`    | number                  | Root sampler trace-id ratio (defaults to `1.0`).                             |
+
+Built-in Instrumentations
+* Fetch – wraps ``globalThis.fetch``, injects ``traceparent``, restores on shutdown.
+* React Navigation – emits spans per screen transition.
+* AppState – captures foreground/background transitions as metrics.
+
+Shutdown & Testing
+``MTNOTel.init()`` resolves to a singleton instance.
+
+```
+const telemetry = await MTNOTel.init({ serviceName: 'demo-app' });
+// ... run tests or logic
+await telemetry.flushAndShutdown();
+```
 
 Publishing & Versioning
 * The SDK is hosted on GitHub Packages:
