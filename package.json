@@ -1,6 +1,6 @@
 {
   "name": "@mukhy/mtn-telemetry-sdk",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "MTN Telemetry SDK for React and React Native applications",
   "main": "dist/index.js",
   "react-native": "dist/index.native.js",
@@ -48,7 +48,6 @@
     "@opentelemetry/sdk-trace-base": "^2.1.0",
     "@opentelemetry/sdk-trace-node": "^2.1.0",
     "@opentelemetry/semantic-conventions": "^1.37.0",
-    "async_hooks": "file:shims/async_hooks",
     "react-native-device-info": "^14.1.1"
   }
 }
