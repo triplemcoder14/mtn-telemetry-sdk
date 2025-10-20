@@ -34,7 +34,7 @@ or via yarn:
 Create a file like src/telemetry/initTelemetry.ts:
 
 ```
-import { MTNOTel, type OTelRNOptions } from '@triplemcoder14/mtn-telemetry-sdk';
+import { MTNOTel, type OTelRNOptions } from '@mukhy/mtn-telemetry-sdk';
 
 export async function initTelemetry(navigationRef?: OTelRNOptions['navigationRef']) {
   const options: OTelRNOptions = {
@@ -62,7 +62,7 @@ In your root component (e.g., App.tsx):
 ```
 import { useEffect, useRef } from 'react';
 import { NavigationContainer, type NavigationContainerRef } from '@react-navigation/native';
-import { MTNOTel } from '@triplemcoder14/mtn-telemetry-sdk';
+import { MTNOTel } from '@mukhy/mtn-telemetry-sdk';
 import { initTelemetry } from './telemetry/initTelemetry';
 import MainStack from './screens/MainStack';
 
